@@ -20,6 +20,10 @@ def upload():
     except Exception as e:
         print("Error during file upload:", e)  # Log the error to the terminal
         return jsonify({'status': 'error', 'message': str(e)}), 500
+    
+@app.route('/test', methods=['GET'])
+def test():
+    return jsonify({'message': 'Server is working!'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)

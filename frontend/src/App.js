@@ -14,7 +14,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/upload",
+        "https://3b7e-87-200-119-69.ngrok-free.app/upload",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
