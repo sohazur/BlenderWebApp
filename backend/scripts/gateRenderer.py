@@ -172,7 +172,7 @@ bpy.context.scene.cycles.samples = 128
 bpy.context.scene.render.image_settings.file_format = 'JPEG'
 
 # Liczba obrazów do renderowania
-num_images = 200
+num_images = 5
 output_path = "/Users/sohazur/Desktop/a2rl/BlenderWebApp/backend/renders/gateRenderTest43_{}.jpg"
 texture_folder = "/Users/sohazur/Desktop/a2rl/BlenderWebApp/backend/scripts/textures/"
 texture_files = [f for f in os.listdir(texture_folder) if f.endswith('.exr')]
