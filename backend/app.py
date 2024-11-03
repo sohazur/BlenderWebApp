@@ -9,19 +9,20 @@ import time
 app = Flask(__name__)
 CORS(app)
 
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_BROKER_URL'] = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+app.config['CELERY_RESULT_BACKEND'] = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
-# Set absolute path to renders directory
-RENDERS_DIR = os.path.abspath("/Users/sohazur/Desktop/a2rl/BlenderWebApp/backend/renders/")
-print(f"RENDERS_DIR set to: {RENDERS_DIR}")  # Debug print to confirm path
+UPLOAD_DIR = os.path.join(os.getcwd(), 'uploads')
+RENDERS_DIR = os.path.join(os.getcwd(), 'renders')
 
 @app.route('/upload', methods=['POST'])
 def upload():
     file = request.files['file']
-    save_path = os.path.join('./uploads', file.filename)
+    save_path = os.path.join(UPLOAD_DIR, file.filename)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
     file.save(save_path)
     task = process_blender_task.apply_async(args=[save_path])
     return jsonify({'task_id': task.id}), 202
@@ -41,14 +42,19 @@ def task_status(task_id):
         return jsonify({'status': 'failed', 'error': str(task_result.info)}), 500
     return jsonify({'status': 'unknown'}), 400
 
+# @app.route('/renders/<path:filename>')
+# def serve_rendered_file(filename):
+#     # Check if the file exists in the directory before serving
+#     full_path = os.path.join(RENDERS_DIR, filename)
+#     if not os.path.exists(full_path):
+#         print(f"File not found: {full_path}")  # Debug print to confirm file existence
+#         return "File not found", 404
+#     return send_from_directory(RENDERS_DIR, filename)
+
 @app.route('/renders/<path:filename>')
 def serve_rendered_file(filename):
-    # Check if the file exists in the directory before serving
-    full_path = os.path.join(RENDERS_DIR, filename)
-    if not os.path.exists(full_path):
-        print(f"File not found: {full_path}")  # Debug print to confirm file existence
-        return "File not found", 404
     return send_from_directory(RENDERS_DIR, filename)
+
 
 @celery.task(bind=True)
 def process_blender_task(self, file_path):
@@ -79,6 +85,14 @@ def process_blender_task(self, file_path):
     except Exception as e:
         print("Error in process_blender_task:", e)
         raise self.retry(exc=e)
+    
+@app.route('/renders/<path:filename>')
+def download_file(filename):
+    return send_from_directory(
+        directory= RENDERS_DIR,
+        path=filename,
+        as_attachment=True
+    )
 
 if __name__ == '__main__':
     app.run(port=5001, debug=True)

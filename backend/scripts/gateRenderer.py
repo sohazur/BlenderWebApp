@@ -9,7 +9,8 @@ import sys
 # Get the file path passed from the command line (set by Flask)
 file_path = sys.argv[-1]
 base_name = os.path.splitext(os.path.basename(file_path))[0]  # Get the base name of the file without extension
-output_path_template = f"/Users/sohazur/Desktop/a2rl/BlenderWebApp/backend/renders/{base_name}_rendered_{{}}.jpg"
+# output_path_template = f"/Users/sohazur/Desktop/a2rl/BlenderWebApp/backend/renders/{base_name}_rendered_{{}}.jpg"
+output_path_template = os.path.join(os.getcwd(), 'renders', f"{base_name}_rendered_{{}}.jpg")
 
 # Clear existing objects in the scene
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -161,7 +162,22 @@ bpy.context.scene.render.image_settings.file_format = 'JPEG'
 
 # Number of images to render
 num_images = 5
-texture_folder = "/Users/sohazur/Desktop/a2rl/BlenderWebApp/backend/scripts/textures/"
+# texture_folder = "/Users/sohazur/Desktop/a2rl/BlenderWebApp/backend/scripts/textures/"
+# # texture_folder = os.path.join(os.getcwd(), 'textures')
+# texture_files = [f for f in os.listdir(texture_folder) if f.endswith('.exr')]
+
+# Get the directory where this script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Set the textures folder relative to the script directory
+texture_folder = os.path.join(script_dir, 'textures')
+
+# Ensure the directory exists, or handle gracefully
+if not os.path.exists(texture_folder):
+    print(f"Textures folder not found: {texture_folder}")
+    sys.exit(1)
+
+# Now use texture_folder for your texture files
 texture_files = [f for f in os.listdir(texture_folder) if f.endswith('.exr')]
 
 for i in range(num_images):
