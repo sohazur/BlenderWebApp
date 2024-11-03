@@ -1,23 +1,29 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import "./App.css"; // Import CSS for styling
 
 function App() {
   const [file, setFile] = useState(null);
   const [taskId, setTaskId] = useState(null);
-  const [status, setStatus] = useState("");
-  const [downloadLink, setDownloadLink] = useState("");
+  const [status, setStatus] = useState("Idle");
+  const [downloadLinks, setDownloadLinks] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
   const handleUpload = async () => {
+    if (!file) return;
+
     const formData = new FormData();
     formData.append("file", file);
+    setIsUploading(true);
+    setStatus("Uploading...");
 
     try {
       const response = await axios.post(
-        "https://3b7e-87-200-119-69.ngrok-free.app/upload",
+        "http://localhost:5001/upload",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -25,8 +31,12 @@ function App() {
       );
       setTaskId(response.data.task_id);
       setStatus("Processing...");
+      setDownloadLinks([]);
     } catch (error) {
-      alert("Error uploading file");
+      console.error("Error uploading file", error);
+      setStatus("Upload failed");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -35,20 +45,24 @@ function App() {
       if (taskId) {
         try {
           const response = await axios.get(
-            `https://3b7e-87-200-119-69.ngrok-free.app/status/${taskId}`
+            `http://localhost:5001/status/${taskId}`
           );
+
           if (response.data.status === "completed") {
             setStatus("Rendering complete");
-            setDownloadLink(
-              `https://3b7e-87-200-119-69.ngrok-free.app/renders/${file.name}`
-            ); // Update with actual file path
+            setDownloadLinks(
+              response.data.file_paths.map(
+                (path) => `http://localhost:5001${path}`
+              )
+            );
           } else if (response.data.status === "pending") {
             setStatus("Processing...");
           } else if (response.data.status === "failed") {
-            setStatus("Rendering failed: " + response.data.error);
+            setStatus(`Rendering failed: ${response.data.error}`);
           }
         } catch (error) {
           console.error("Error checking status", error);
+          setStatus("Error checking status");
         }
       }
     };
@@ -58,14 +72,33 @@ function App() {
   }, [taskId]);
 
   return (
-    <div>
-      <input type="file" onChange={handleFileChange} />
-      <button onClick={handleUpload}>Upload</button>
-      <p>Status: {status}</p>
-      {downloadLink && (
-        <a href={downloadLink} download>
-          Download Result
-        </a>
+    <div className="app-container">
+      <h1 className="title">RaByte Renderer</h1>
+      <div className="upload-container">
+        <input type="file" onChange={handleFileChange} className="file-input" />
+        <button
+          onClick={handleUpload}
+          className="upload-button"
+          disabled={isUploading || !file}
+        >
+          {isUploading ? "Uploading..." : "Upload"}
+        </button>
+        {status === "Processing..." && <div className="progress-bar"></div>}
+      </div>
+      <p className="status-text">{status}</p>
+      {downloadLinks.length > 0 && (
+        <div className="download-links">
+          {downloadLinks.map((link, index) => (
+            <a
+              href={link}
+              download={`Rendered_Image_${index + 1}.jpg`}
+              key={index}
+              className="download-link"
+            >
+              Download Result {index + 1}
+            </a>
+          ))}
+        </div>
       )}
     </div>
   );
