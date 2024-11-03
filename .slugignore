@@ -1,0 +1,6 @@
+*.blend
+*.obj
+node_modules
+uploads/*
+renders/*
+frontend/node_modules/*
