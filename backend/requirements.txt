@@ -1,3 +1,0 @@
-Flask
-Flask-Cors
-pip freeze > requirements.txt
