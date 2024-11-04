@@ -2,14 +2,13 @@ import bpy
 import bpy_extras
 import random
 import math
-from mathutils import Vector
+from mathutils import Vector, Euler
 import os
 import sys
 
 # Get the file path passed from the command line (set by Flask)
 file_path = sys.argv[-1]
-base_name = os.path.splitext(os.path.basename(file_path))[0]  # Get the base name of the file without extension
-# output_path_template = f"/Users/sohazur/Desktop/a2rl/BlenderWebApp/backend/renders/{base_name}_rendered_{{}}.jpg"
+base_name = os.path.splitext(os.path.basename(file_path))[0]
 output_path_template = os.path.join(os.getcwd(), 'renders', f"{base_name}_rendered_{{}}.jpg")
 
 # Clear existing objects in the scene
@@ -152,6 +151,14 @@ def random_camera_position(radius_range, angle_range):
     z = radius * math.cos(phi)
     return (x, y, z)
 
+# Function to randomly rotate the object
+def random_object_rotation(obj):
+    obj.rotation_euler = Euler((
+        random.uniform(0, 2 * math.pi),
+        random.uniform(0, 2 * math.pi),
+        random.uniform(0, 2 * math.pi)
+    ), 'XYZ')
+
 # Render settings
 bpy.context.scene.render.engine = 'CYCLES'
 bpy.context.scene.cycles.device = 'CPU'
@@ -162,22 +169,16 @@ bpy.context.scene.render.image_settings.file_format = 'JPEG'
 
 # Number of images to render
 num_images = 5
-# texture_folder = "/Users/sohazur/Desktop/a2rl/BlenderWebApp/backend/scripts/textures/"
-# # texture_folder = os.path.join(os.getcwd(), 'textures')
-# texture_files = [f for f in os.listdir(texture_folder) if f.endswith('.exr')]
 
-# Get the directory where this script is located
+# Set texture folder relative to script directory
 script_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Set the textures folder relative to the script directory
 texture_folder = os.path.join(script_dir, 'textures')
 
-# Ensure the directory exists, or handle gracefully
+# Ensure the directory exists
 if not os.path.exists(texture_folder):
     print(f"Textures folder not found: {texture_folder}")
     sys.exit(1)
 
-# Now use texture_folder for your texture files
 texture_files = [f for f in os.listdir(texture_folder) if f.endswith('.exr')]
 
 for i in range(num_images):
@@ -185,6 +186,7 @@ for i in range(num_images):
     texture_path = os.path.join(texture_folder, random.choice(texture_files))
     add_ambient_light(texture_path)
     cam.location = random_camera_position(radius_range=(450, 1500), angle_range=(0, 2 * math.pi))
+    random_object_rotation(imported_obj)  # Rotate the object
     obj_center = get_object_center(imported_obj)
     direction = obj_center - cam.location
     cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
