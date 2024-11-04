@@ -40,9 +40,6 @@ try:
     mesh = bpy.data.meshes.new(name="ImportedMesh")
     obj = bpy.data.objects.new(name="ImportedOBJ", object_data=mesh)
     
-    for obj in bpy.data.objects:
-        print(f"Object: {obj.name}, Type: {obj.type}")
-    
     # Link object to scene
     bpy.context.collection.objects.link(obj)
     
@@ -55,6 +52,31 @@ try:
 except Exception as e:
     print(f"Failed to manually import OBJ file: {e}")
     sys.exit(1)
+
+# Apply texture to the imported object
+def apply_texture(obj, texture_path):
+    # Create a new material
+    material = bpy.data.materials.new(name="TextureMaterial")
+    material.use_nodes = True
+    
+    # Get material nodes
+    bsdf = material.node_tree.nodes["Principled BSDF"]
+    tex_image = material.node_tree.nodes.new('ShaderNodeTexImage')
+    tex_image.image = bpy.data.images.load(texture_path)
+    
+    # Connect the texture to the base color of the BSDF
+    material.node_tree.links.new(bsdf.inputs['Base Color'], tex_image.outputs['Color'])
+    
+    # Assign the material to the object
+    if len(obj.data.materials):
+        obj.data.materials[0] = material
+    else:
+        obj.data.materials.append(material)
+
+# Apply texture
+script_dir = os.path.dirname(os.path.abspath(__file__))
+texture_path = os.path.join(script_dir, 'textures', 'gateTexture.png')  # Adjust path if needed
+apply_texture(imported_obj, texture_path)
 
 # Function to calculate the center of the bounding box of an object
 def get_object_center(obj):
@@ -179,14 +201,15 @@ if not os.path.exists(texture_folder):
     print(f"Textures folder not found: {texture_folder}")
     sys.exit(1)
 
+# Now use texture_folder for your texture files
 texture_files = [f for f in os.listdir(texture_folder) if f.endswith('.exr')]
 
 for i in range(num_images):
     add_lights()
     texture_path = os.path.join(texture_folder, random.choice(texture_files))
     add_ambient_light(texture_path)
+    random_object_rotation(imported_obj)
     cam.location = random_camera_position(radius_range=(450, 1500), angle_range=(0, 2 * math.pi))
-    random_object_rotation(imported_obj)  # Rotate the object
     obj_center = get_object_center(imported_obj)
     direction = obj_center - cam.location
     cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
