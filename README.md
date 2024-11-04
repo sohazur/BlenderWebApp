@@ -22,7 +22,7 @@ Before getting started, ensure you have the following installed:
 
 ## Repository Structure
 
-````plaintext
+```plaintext
 BlenderWebApp/
 ├── backend/
 │   ├── app.py               # Flask backend
@@ -37,6 +37,7 @@ BlenderWebApp/
     ├── package.json         # Frontend dependencies
     ├── README.md            # Frontend-specific readme
     └── requirements.txt     # Python dependencies
+```
 
 ## Installation
 
@@ -45,7 +46,7 @@ BlenderWebApp/
 ```bash
 git clone https://github.com/sohazur/BlenderWebApp.git
 cd BlenderWebApp
-````
+```
 
 ## Backend Setup
 
